@@ -11,7 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,7 +29,7 @@ SECRET_KEY = 'django-insecure-g79^s7i=32qa=#x$%w*6#giw0vrokk2b9xj=)i*r7jy_rtd5*^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['51.20.7.152','127.0.0.1']
 
 
 # Application definition
@@ -134,7 +138,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_URL = 'static/'
 STATICFILES_DIRS= [BASE_DIR/'static']
 STATIC_ROOT = BASE_DIR/'assets'
 # STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
@@ -164,9 +167,35 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
 }
 
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "61008",
-    "localhost",
-    "192.168.22.54",  # ✅ Ajoute ici l'adresse IP de ton téléphone ou PC
-]
+# ALLOWED_HOSTS = [
+#     "127.0.0.1",
+#     "61008",
+#     "localhost",
+#     "192.168.22.54",  # ✅ Ajoute ici l'adresse IP de ton téléphone ou PC
+# ]
+
+
+
+
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', default='af-south-1')
+
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.af-south-1.amazonaws.com"
+AWS_S3_FILE_OVERWRITE = False
+AWS_QUERYSTRING_EXPIRE = 5
+AWS_S3_CUSTOM_DOMAIN = os.getenv('AWS_S3_CUSTOM_DOMAIN')
+
+STORAGES = {
+
+    # Media file (image) management   
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+    },
+    
+    # CSS and JS file management
+    "staticfiles": {
+        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+    },
+}
