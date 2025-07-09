@@ -547,7 +547,7 @@ class Photo(models.Model):
 
 class Cart(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='carts')
-    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='carts')
+    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='carts', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_ordered = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -752,7 +752,7 @@ class Advertisement(models.Model):
         if not self.slug:
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
-        
+
     def get_max_value(self, field_name):
         # Si max_interactions est défini, il domine sur les 3 champs
         if self.max_interactions is not None:

@@ -47,6 +47,7 @@ def home_view(request):
         Q(show_in_all=False, country=user.country if user.is_authenticated else None) |
         Q(show_in_all=False, city=user.city if user.is_authenticated else None)
     ).select_related('store', 'store__country', 'store__city').order_by('-created_at')
+    
     ad_popup = get_targeted_popup(request.user)
 
     # ✅ Données de base
@@ -55,35 +56,39 @@ def home_view(request):
     cities = City.objects.all()
     typebusinesses = TypeBusiness.objects.all()
 
-    # ✅ Stores groupés par TypeBusiness avec filtrage intelligent
+    # ✅ Stores groupés par TypeBusiness
     stores_by_type = {}
     for tb in typebusinesses:
         stores_qs = Store.objects.filter(typebusiness=tb, is_active=True).select_related('country', 'city')
         stores_by_type[tb.id] = filter_by_user_location(stores_qs, user, 'city', 'country')[:10]
 
-    # ✅ Pagination stores récents
+    # ✅ Stores récents avec pagination
     recent_stores_qs = Store.objects.select_related('country', 'city').filter(is_active=True).order_by('-created_at')
     store_list = filter_by_user_location(recent_stores_qs, user, 'city', 'country')[:4]
     paginator = Paginator(store_list, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # ✅ Produits groupés par type_product avec ciblage intelligent
+    # ✅ Produits filtrés
     products_qs = Product.objects.select_related('type_product', 'store', 'store__city', 'store__country').filter(
         store__is_active=True
     )
     products_filtered = filter_by_user_location(products_qs, user, 'store__city', 'store__country')
 
+    # ✅ Groupement
     grouped_products = defaultdict(list)
     for product in products_filtered:
         key = product.type_product.nom if product.type_product else "Autres"
         grouped_products[key].append(product)
 
-    # ✅ Produits récents ciblés
+    # ✅ Produits récents
     recent_products = products_filtered.order_by('-created_at')[:4]
-    # 💲 Devise
-    currency = getattr(product.store.country.devise_info, 'devise', 'FC')
-    # Si l'utilisateur est connecté, filtrer par pays/ville
+
+    # ✅ Devise
+    product = recent_products.first() if recent_products else None
+    currency = getattr(product.store.country.devise_info, 'devise', 'FC') if product else 'FC'
+
+    # ✅ Requêtes ciblées
     if user.is_authenticated:
         requetes = Requete.objects.all()
         if user.country:
@@ -91,11 +96,10 @@ def home_view(request):
         if user.city:
             requetes = requetes.filter(city=user.city)
     else:
-        requetes = Requete.objects.all()  # <--- Important de le définir pour les utilisateurs non connectés
+        requetes = Requete.objects.all()
 
-    # Limiter aux 3 dernières requêtes
     requetes = requetes.order_by('-created_at')[:3]
-      
+
     return render(request, 'base/index.html', {
         'featured_stores': featured_stores,
         'typestores': typestores,
@@ -108,9 +112,10 @@ def home_view(request):
         'user_city': getattr(user, 'city', None),
         'product_list': recent_products,
         'currency': currency,
-        'requetes': requetes, 
+        'requetes': requetes,
         'ad_popup': ad_popup,
     })
+
 
 
 
