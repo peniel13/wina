@@ -53,6 +53,8 @@ admin.site.register(City)
 from django.contrib import admin
 from .models import Store, Typestore, Country, City,StoreSubscription,Testimonial,SpotPubStore
 
+from django.utils.html import format_html
+
 @admin.register(Store)
 class StoreAdmin(admin.ModelAdmin):
     list_display = (
@@ -62,7 +64,22 @@ class StoreAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'country', 'city', 'typestore', 'typebusiness')
     search_fields = ('name', 'owner__email', 'city__name', 'country__name')
     prepopulated_fields = {"slug": ("name",)}
-    readonly_fields = ('thumbnail',)
+
+    # ✅ Affiche une preview mais permet l'upload
+    def thumbnail_preview(self, obj):
+        if obj.thumbnail:
+            return format_html('<img src="{}" width="100" height="100" style="object-fit: cover;"/>', obj.thumbnail.url)
+        return "Pas d'image"
+    thumbnail_preview.short_description = "Aperçu"
+
+    readonly_fields = ('thumbnail_preview',)  # Pas le champ réel
+    fields = (
+        'name', 'slug', 'owner', 'typestore', 'typebusiness',
+        'country', 'city', 'adresse', 'description',
+        'thumbnail_preview', 'thumbnail',
+        'latitude', 'longitude', 'is_active', 'favoritestore'
+    )
+
 
 # Register related models if not already
 admin.site.register(Typestore)

@@ -240,10 +240,24 @@
 </div>
 {% endif %}  
               
-              <div>
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="rounded-t-xl w-full h-40 object-cover" 
-                    onclick="showImagePopup('{{ product.image.url }}')"/>
-                </div>
+<div>
+  {% if product.video %}
+    <video autoplay muted loop playsinline
+           class="rounded-t-xl w-full h-40 object-cover cursor-pointer"
+           onclick="this.muted = !this.muted; this.controls = true;">
+      <source src="{{ product.video.url }}" type="video/mp4">
+      Votre navigateur ne supporte pas la lecture vidéo.
+    </video>
+  {% elif product.image %}
+    <img src="{{ product.image.url }}" alt="{{ product.name }}"
+         class="rounded-t-xl w-full h-40 object-cover"
+         onclick="showImagePopup('{{ product.image.url }}')" />
+  {% else %}
+    <div class="rounded-t-xl w-full h-40 bg-gray-300 flex items-center justify-center text-gray-600 text-sm">
+      Pas de média
+    </div>
+  {% endif %}
+</div>
                 <div class="flex flex-col justify-between flex-grow p-4">
                     <!-- Bouton "Ajouter au panier" -->
                     <form id="add-to-cart-form-{{ product.id }}" action="" method="POST">

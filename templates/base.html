@@ -118,7 +118,7 @@
                        
                     {% endif %}
                 {% else %}
-                    <a href="{% url 'signup' %}" class="hover:bg-gray-700 px-3 py-2 rounded">S'inscrire</a>
+                    <a href="{% url 'register' %}" class="hover:bg-gray-700 px-3 py-2 rounded">S'inscrire</a>
                     <a href="{% url 'login' %}" class="hover:bg-gray-700 px-3 py-2 rounded">Connexion</a>
                 {% endif %}
             </div>
@@ -199,7 +199,7 @@
         <a href="{% url 'profile' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Salut, {{ request.user.username }}</a>
         <a href="{% url 'logout' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Déconnexion</a>
     {% else %}
-        <a href="{% url 'signup' %}" class="block px-4 py-2 text-white hover:bg-gray-700">S'inscrire</a>
+        <a href="{% url 'register' %}" class="block px-4 py-2 text-white hover:bg-gray-700">S'inscrire</a>
         <a href="{% url 'login' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Connexion</a>
     {% endif %}
 </div>
@@ -240,7 +240,7 @@
                     </div>
                     <div class="md:w-1/2">
                         <form action="https://api.web3forms.com/submit" method="POST" class="flex">
-                            <input type="hidden" name="access_key" value="055205c7-3cd2-4cb9-a552-c2fd37eb91bf">
+                            <input type="hidden" name="access_key" value="f0a24e68-feaf-4b96-ba0f-07771649ad93">
                             <input type="email" name="email" placeholder="Entrer votre Adresse mail" required class="flex-1 p-2 rounded-l-lg border border-gray-300" />
                             <button class="bg-blue-600 text-white p-2 rounded-r-lg">Souscrire maintenant</button>
                         </form>
@@ -274,7 +274,7 @@
                     <h3 class="text-lg font-bold">Contact</h3>
                     <div class="mt-2">
                         <p class="flex items-center"><i class="ti-mobile mr-2"></i><a href="callto:+243 97 24 89 318" class="text-gray-400 hover:text-white">0972489318</a></p>
-                        <p class="flex items-center"><i class="ti-email mr-2"></i><a href="mailto:lushimarche@gmail.com" class="text-gray-400 hover:text-white">lushimarche@gmail.com</a></p>
+                        <p class="flex items-center"><i class="ti-email mr-2"></i><a href="mailto:winaservice1@gmail.com" class="text-gray-400 hover:text-white">winaservice1@gmail.com</a></p>
                     </div>
                 </div>
             </div>

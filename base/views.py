@@ -41,14 +41,18 @@ def filter_by_user_location(queryset, user, city_field='city', country_field='co
 def home_view(request):
     user = request.user
 
+    print("✅ USER =", user if user.is_authenticated else "Anonymous")
+
     # ✅ Featured Stores
     featured_stores = FeaturedStore.objects.filter(
         Q(show_in_all=True) |
         Q(show_in_all=False, country=user.country if user.is_authenticated else None) |
         Q(show_in_all=False, city=user.city if user.is_authenticated else None)
     ).select_related('store', 'store__country', 'store__city').order_by('-created_at')
-    
-    ad_popup = get_targeted_popup(request.user)
+
+    print("✅ FEATURED STORES =", featured_stores.count())
+
+    ad_popup = get_targeted_popup(user)
 
     # ✅ Données de base
     typestores = Typestore.objects.all()
@@ -56,24 +60,30 @@ def home_view(request):
     cities = City.objects.all()
     typebusinesses = TypeBusiness.objects.all()
 
-    # ✅ Stores groupés par TypeBusiness
+    # ✅ Stores groupés
     stores_by_type = {}
     for tb in typebusinesses:
         stores_qs = Store.objects.filter(typebusiness=tb, is_active=True).select_related('country', 'city')
-        stores_by_type[tb.id] = filter_by_user_location(stores_qs, user, 'city', 'country')[:10]
+        filtered = filter_by_user_location(stores_qs, user, 'city', 'country')[:10]
+        stores_by_type[tb.id] = filtered
+        print(f"📦 STORES POUR TypeBusiness {tb.nom} =", filtered.count())
 
     # ✅ Stores récents avec pagination
     recent_stores_qs = Store.objects.select_related('country', 'city').filter(is_active=True).order_by('-created_at')
-    store_list = filter_by_user_location(recent_stores_qs, user, 'city', 'country')[:4]
-    paginator = Paginator(store_list, 20)
+    filtered_recent_stores = filter_by_user_location(recent_stores_qs, user, 'city', 'country')
+    print("🕐 STORES RECENTS FILTRÉS =", filtered_recent_stores.count())
+
+    paginator = Paginator(filtered_recent_stores, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     # ✅ Produits filtrés
-    products_qs = Product.objects.select_related('type_product', 'store', 'store__city', 'store__country').filter(
-        store__is_active=True
-    )
+    products_qs = Product.objects.select_related(
+        'type_product', 'store', 'store__city', 'store__country'
+    ).filter(store__is_active=True)
+
     products_filtered = filter_by_user_location(products_qs, user, 'store__city', 'store__country')
+    print("🛒 PRODUITS FILTRÉS =", products_filtered.count())
 
     # ✅ Groupement
     grouped_products = defaultdict(list)
@@ -83,22 +93,25 @@ def home_view(request):
 
     # ✅ Produits récents
     recent_products = products_filtered.order_by('-created_at')[:4]
+    print("🆕 PRODUITS RÉCENTS =", [p.name for p in recent_products])
 
     # ✅ Devise
-    product = recent_products.first() if recent_products else None
-    currency = getattr(product.store.country.devise_info, 'devise', 'FC') if product else 'FC'
+    try:
+        product = recent_products[0] if recent_products else None
+        currency = getattr(product.store.country.devise_info, 'devise', 'FC') if product else 'FC'
+    except Exception as e:
+        print("❌ ERREUR DEVISING =", e)
+        currency = 'FC'
 
-    # ✅ Requêtes ciblées
+    # ✅ Requêtes
+    requetes = Requete.objects.all()
     if user.is_authenticated:
-        requetes = Requete.objects.all()
         if user.country:
             requetes = requetes.filter(country=user.country)
         if user.city:
             requetes = requetes.filter(city=user.city)
-    else:
-        requetes = Requete.objects.all()
-
     requetes = requetes.order_by('-created_at')[:3]
+    print("📨 REQUÊTES =", requetes.count())
 
     return render(request, 'base/index.html', {
         'featured_stores': featured_stores,
@@ -115,6 +128,7 @@ def home_view(request):
         'requetes': requetes,
         'ad_popup': ad_popup,
     })
+
 
 
 
