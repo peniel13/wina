@@ -31,7 +31,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['51.20.7.152','127.0.0.1']
 
+CSRF_COOKIE_SECURE = False
 
+
+   
 # Application definition
 
 INSTALLED_APPS = [

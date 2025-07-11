@@ -784,7 +784,7 @@ class AdvertisementAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                'title', 'description', 'media_type', 'media_file', 'thumbnail_url', 'url'
+                'title', 'user', 'description', 'media_type', 'media_file', 'thumbnail_url', 'url'
             )
         }),
         ('Ciblage', {
