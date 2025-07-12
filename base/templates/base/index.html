@@ -479,6 +479,275 @@
         {% endfor %}
     </div>
   </section>
+  
+  {% if no_ads_message %}
+<div class="alert alert-warning text-center mt-4">
+  {{ no_ads_message }}
+</div>
+{% endif %}
+
+<div class="container mx-auto p-4" id="publicites">
+  <h1 class="text-3xl font-bold mb-6">Recentes Publicités 💵</h1>
+<p class="text-lg text-gray-700 mb-6">
+    Aimez, commentez, partagez et visitez une publicité pour gagner jusqu’à <strong>7 points</strong> par publicité !
+</p>
+
+<!-- 🔽 Bouton Voir plus -->
+<div class="flex justify-center mt-6">
+    <a href="{% url 'advertisement_list_wina' %}" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+        Voir plus de publicités
+    </a>
+</div>
+
+
+  {% if user_points %}
+    <p>Points disponibles : {{ user_points.points }} points</p>
+  {% else %}
+    <p>Vous devez vous connecter pour accumuler des points.</p>
+    <a href="{% url 'login' %}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 mt-2 mb-4 inline-block">
+      Se connecter
+    </a>
+  {% endif %}
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for ad in ads %}
+      <div class="bg-white rounded-lg shadow-lg p-4 transform transition-transform hover:scale-105 hover:shadow-lg duration-300 mb-6">
+        <h2 class="text-xl font-semibold">{{ ad.title }}</h2>
+        <p class="text-gray-600">{{ ad.description|truncatewords:20 }}</p>
+
+        {% if ad.media_type == 'image' %}
+          <img src="{{ ad.media_file.url }}" alt="{{ ad.title }}" class="w-full mt-4 rounded">
+        {% elif ad.media_type == 'video' %}
+          <video class="w-full mt-4 rounded" controls poster="{{ ad.thumbnail_url.url }}">
+              <source src="{{ ad.media_file.url }}" type="video/mp4">
+          </video>
+        {% endif %}
+
+        {% if ad.url %}
+          <a href="{% url 'visit_ad_url' ad.slug %}" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-800 mt-4 inline-block">
+            🌐 Visiter le lien de la pub 👁 Visites : {{ ad.visits_count }}
+          </a>
+          {% if not user.is_authenticated %}
+            <p class="text-sm text-red-500 mt-2">Connecte-toi pour gagner des points en visitant les pubs.</p>
+          {% endif %}
+        {% elif ad.store %}
+          <a href="{% url 'visit_ad_url' ad.slug %}?next={% url 'store_detail' ad.store.slug %}"
+             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-800 mt-4 inline-block">
+            🏪 Visiter le store associé
+          </a>
+          {% if not user.is_authenticated %}
+            <p class="text-sm text-red-500 mt-2">Connecte-toi pour gagner des points en visitant le store.</p>
+          {% endif %}
+        {% endif %}
+
+        <div class="flex items-center justify-between mt-4">
+          {% if user.is_authenticated %}
+            <form action="{% url 'handle_like' ad.id %}" method="POST">
+              {% csrf_token %}
+              <button type="submit" {% if ad.user_has_liked %}disabled class="cursor-not-allowed opacity-50"{% endif %}>
+                {% if ad.user_has_liked %}
+                  <span class="text-red-500 text-2xl">❤️</span>
+                {% else %}
+                  <span class="text-gray-500 text-2xl">🤍</span>
+                {% endif %}
+              </button>
+            </form>
+
+            <a href="{% url 'ad_comments' ad.slug %}" class="mr-4 text-2xl text-blue-500">
+              💬
+            </a>
+
+            {% if ad.id not in user_shares %}
+              <button onclick="openSharePopup({{ ad.id }})" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-700 mt-2">
+                <i class="fa fa-share-alt"></i> Partager
+              </button>
+            {% else %}
+              <button class="px-4 py-2 bg-gray-400 text-white rounded-lg mt-2" disabled>
+                <i class="fa fa-share-alt"></i> Déjà partagé
+              </button>
+            {% endif %}
+          {% else %}
+            <p class="text-red-500 mt-2">🔒 Connectez-vous pour interagir avec cette publicité.</p>
+            <a href="{% url 'login' %}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 mt-2 inline-block">
+              Se connecter
+            </a>
+          {% endif %}
+        </div>
+
+        <!-- POPUP DE PARTAGE -->
+        <div id="share-popup-{{ ad.id }}" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
+          <div class="bg-white p-6 rounded-xl relative w-96">
+            <button onclick="closeSharePopup({{ ad.id }})" class="absolute top-2 right-3 text-gray-600 text-2xl hover:text-gray-900">&times;</button>
+            <h3 class="text-xl font-semibold text-center">Partager cette publicité</h3>
+            <form method="POST" action="{% url 'record_share' ad.slug %}" id="share-form-{{ ad.id }}">
+              {% csrf_token %}
+              <input type="hidden" name="social_network" id="social-network-input-{{ ad.id }}">
+              <div class="flex justify-center mt-6 space-x-4">
+                <a href="#" onclick="recordShare(event, {{ ad.id }}, 'whatsapp')" data-url="{{ ad_absolute_urls|get_item:ad.id }}">
+                  <img src="{% static 'img/whatsap2.jpg' %}" class="w-10 h-10">
+                </a>
+                <a href="#" onclick="recordShare(event, {{ ad.id }}, 'facebook')" data-url="{{ ad_absolute_urls|get_item:ad.id }}">
+                  <img src="{% static 'img/fb2.png' %}" class="w-10 h-10">
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="mt-4 flex justify-between items-center text-gray-500">
+          <div>
+            <p>{{ ad.likes_count }} Like(s)</p>
+            <p>{{ ad.comments_count }} Commentaire(s)</p>
+            <p>{{ ad.shares_count }} Partage(s)</p>
+          </div>
+          <a href="{% url 'advertisement_detail' ad.slug %}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+            Voir Détails
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  function openSharePopup(adId) {
+    document.getElementById(`share-popup-${adId}`).classList.remove('hidden');
+  }
+  function closeSharePopup(adId) {
+    document.getElementById(`share-popup-${adId}`).classList.add('hidden');
+  }
+  function recordShare(event, adId, network) {
+    event.preventDefault();
+    const form = document.getElementById(`share-form-${adId}`);
+    document.getElementById(`social-network-input-${adId}`).value = network;
+
+    const adUrl = event.currentTarget.getAttribute('data-url');
+    const url = form.action;
+    const data = new FormData(form);
+
+    const shareLinks = {
+      'facebook': `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(adUrl)}`,
+      'whatsapp': `https://api.whatsapp.com/send?text=${encodeURIComponent(adUrl)}`,
+    };
+
+    window.open(shareLinks[network], '_blank');
+
+    fetch(url, {
+      method: 'POST',
+      body: data
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'success') {
+        alert(`Merci ! Vous avez gagné ${data.points} points.`);
+        closeSharePopup(adId);
+        location.reload();
+      }
+    });
+  }
+</script>
+
+
+  <h1 class="text-3xl font-bold mb-6 text-center">🎉 Tirages au sort Challenge</h1>
+  <!-- 🔽 Bouton Voir plus -->
+  <div class="flex justify-center mt-6 mb-6">
+    <a href="{% url 'lottery_list' %}" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+        Voir plus de Tirages au sort 
+    </a>
+  </div>
+  
+  {% if lotteries %}
+      <div id="tirages" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {% for lottery in lotteries %}
+              <div id="tirage-{{ lottery.id }}" class="bg-white p-6 rounded-lg shadow-md transform transition-transform hover:scale-105 hover:shadow-lg duration-300 mb-6">
+                  
+                  {% if lottery.image %}
+                      <img src="{{ lottery.image.url }}" alt="{{ lottery.title }}" class="w-full h-48 object-cover rounded mb-4">
+                  {% endif %}
+
+                  <h2 class="text-xl font-semibold mb-2">{{ lottery.title }}</h2>
+
+                  {% if lottery.top_winner %}
+                      <div class="flex items-center space-x-4 mb-4 bg-green-50 p-3 rounded">
+                          <div class="flex-shrink-0">
+                              {% if lottery.top_winner.user.profile_pic %}
+                                  <img class="h-12 w-12 rounded-full" src="{{ lottery.top_winner.user.profile_pic.url }}" alt="Avatar gagnant">
+                              {% else %}
+                                  <img class="h-12 w-12 rounded-full" src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="Avatar par défaut">
+                              {% endif %}
+                          </div>
+                          <p class="text-green-700 font-medium">
+                              🎉 Félicitations à <strong>{{ lottery.top_winner.full_name }} le gagnant ou la gagnante</strong> !
+                          </p>
+                          
+                      </div>
+                      <p>🏆 Gagnant numéro 1 {{ lottery.top_winner.full_name }}</p>
+                  {% else %}
+                      <p class="text-gray-500 italic mb-4">Aucun gagnant désigné encore.</p>
+                  {% endif %}
+
+                  <p class="text-gray-700 mb-4">
+                      {{ lottery.description|truncatechars:150 }}
+                      {% if lottery.description|length > 150 %}
+                          <button 
+                              type="button" 
+                              class="text-blue-600 underline ml-2 hover:text-blue-800" 
+                              onclick="open1Modal('{{ lottery.id }}')">
+                              Lire plus
+                          </button>
+                      {% endif %}
+                  </p>
+
+                  <!-- MODAL -->
+                  <div id="modal-{{ lottery.id }}" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+                      <div class="bg-white rounded-lg shadow-lg max-w-xl w-full p-6 relative">
+                          <button onclick="close1Modal('{{ lottery.id }}')" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl">&times;</button>
+                          <h2 class="text-2xl font-semibold mb-4">Description complète</h2>
+                          <p class="text-gray-800 whitespace-pre-line">{{ lottery.description }}</p>
+                      </div>
+                  </div>
+
+                  {% with count=lottery.current_participant_count %}
+                      <div class="text-sm text-gray-600 mb-2">
+                          <strong>Prix de Participation :</strong> {{ lottery.participation_fee }} usd
+                      </div>
+                      <div class="text-sm text-gray-600 mb-2">
+                          <strong>Participants :</strong> {{ count }} / {{ lottery.max_participants }}
+                      </div>
+
+                      {% if user.is_authenticated %}
+  {% if lottery.is_active and count < lottery.max_participants %}
+      <a href="{% url 'participate_in_lottery' lottery.id %}" class="inline-block mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded">
+          Participer
+      </a>
+  {% else %}
+      <p class="text-red-500 font-semibold">Les participations sont fermées.</p>
+  {% endif %}
+{% else %}
+  <a href="{% url 'login' %}?next={% url 'participate_in_lottery' lottery.id %}" class="inline-block mt-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded">
+      Connectez-vous pour participer
+  </a>
+{% endif %}
+
+
+                      {% if count == lottery.max_participants %}
+                          <a href="{% url 'lottery_result' lottery.id %}" class="inline-block mt-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">
+                              Voir le résultat
+                          </a>
+                      {% else %}
+                      <a href="{% url 'lottery_result_pending' lottery.id %}" class="inline-block mt-2 bg-gray-400 text-white font-semibold px-4 py-2 rounded hover:bg-gray-500 transition">
+                          Résultat en attente
+                      </a>
+                      
+                      {% endif %}
+                  {% endwith %}
+              </div>
+          {% endfor %}
+      </div>
+  {% else %}
+      <p class="text-center text-gray-500">Aucun tirage au sort disponible pour le moment.</p>
+  {% endif %}
+
   <section class="bg-gray-100 py-6 px-6 sm:px-12 md:px-24">
     <div class="container mx-auto text-center">
         <h2 class="text-4xl font-extrabold text-gray-800 mb-4">Recherchez vos biens immobiliers</h2>
@@ -546,7 +815,7 @@
         <!-- Bouton d'appel à l'action -->
         <div class="mt-12">
             <a href="{% url 'requete_create' %}" class="bg-blue-600 text-white px-8 py-4 rounded-lg text-xl font-semibold hover:bg-blue-700 transition duration-300">
-                Créez une Requête de Recherche
+                Rechercher immobilier
             </a>
         </div>
     </div>
@@ -755,4 +1024,15 @@
  
  glide01.mount();
  </script>
+ <script>
+  function open1Modal(id) {
+      document.getElementById('modal-' + id).classList.remove('hidden');
+      document.getElementById('modal-' + id).classList.add('flex');
+  }
+
+  function close1Modal(id) {
+      document.getElementById('modal-' + id).classList.add('hidden');
+      document.getElementById('modal-' + id).classList.remove('flex');
+  }
+</script>
 {% endblock %}
